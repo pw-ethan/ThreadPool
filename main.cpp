@@ -13,6 +13,6 @@ int main()
     icmd.SetArg("hello");
     cout << "cmd : " << icmd.GetCmd() << " arg : " << icmd.GetArg() << endl;
 
-    CThreadProcess.Process0();
+    //CThreadProcess.Process0();
     return 0;
 }
