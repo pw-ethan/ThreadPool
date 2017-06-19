@@ -1,39 +1,63 @@
 #ifndef THREAD_POOL_H
 #define THREAD_POOL_H
 
-#include <deque>
+
+#include <functional>
+#include <atomic>
 #include <vector>
 #include <thread>
-#include <mutex>
-#include <condition_variable>
-
+#include <future>
+#include "threadsafe_queue.h"
+#include "join_threads.h"
+#include "function_wrapper.h"
 #include "task.h"
 
 
-class CThreadPool
-{
+class CThreadPool {
+    std::atomic_bool done;
+    threadsafe_queue<function_wrapper> work_queue;
+    std::vector<std::thread> threads;
+    join_threads joiner;
+
+    void worker_thread() {
+        while (!done) {
+            function_wrapper task;
+            if (work_queue.try_pop(task)) {
+                task();
+            } else {
+                std::this_thread::yield();
+            }
+        }
+    }
+
 public:
-    CThreadPool(int threadNum = 10);
-    int AddTask(CTask *task);
-    int StopAll();
-    int getTaskSize();
+    CThreadPool() : done(false), joiner(threads) {
+        unsigned const thread_count = std::thread::hardware_concurrency();
 
-protected:
-    static void* ThreadFunc(void* threadData);
-    static int MoveToIdle(std::thread::id tid);
-    static int MoveToBusy(std::thread::id tid);
+        try {
+            for (unsigned i = 0; i < thread_count; ++i) {
+                threads.push_back(std::thread(&CThreadPool::worker_thread, this));
+            }
+        } catch (...) {
+            done = true;
+            throw;
+        }
+    }
 
-    int Create();
+    ~CThreadPool() {
+        done = true;
+    }
 
-private:
-    static std::deque<CTask*> m_TaskList;
-    static bool m_bShutdown;
-    int m_iThreadNum;
-    std::vector<std::thread::id> m_vThreadIDs;
+    template<typename FunctionType>
+    std::future<typename std::result_of<FunctionType()>::type> submit(FunctionType f) {
+        typedef typename std::result_of<FunctionType()>::type result_type;
 
-    static std::mutex m_mThreadMutex;
-    static std::condition_variable m_cThreadCond;
-
+        std::packaged_task<result_type()> task(std::move(f));
+        std::future<result_type> res(task.get_future());
+        work_queue.push(std::move(task));
+        return res;
+    }
 };
+
 
 #endif // THREAD_POOL_H

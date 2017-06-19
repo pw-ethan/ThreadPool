@@ -1,5 +1,26 @@
-#include "task.h"
+//#include "task.h"
+//#include <string.h>
 
-void CTask::SetData(void* data) {
-    m_pData = data;
-}
+//int CTask::GetCmd() {
+//    return m_iCmd;
+//}
+//
+//char* CTask::GetArg() {
+//    return m_strArg;
+//}
+//
+//void CTask::SetCmd(int cmd) {
+//    m_iCmd = cmd;
+//}
+//
+//void CTask::SetArg(char* arg) {
+//    if (NULL == arg) {
+//        return;
+//    }
+//    strncpy(m_strArg, arg, 64);
+//    m_strArg[64] = '\0';
+//}
+//
+//int CTask::run() {
+//
+//}

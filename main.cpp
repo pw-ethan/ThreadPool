@@ -1,18 +1,28 @@
 #include <iostream>
 
-#include "command.h"
-#include "thread_process.h"
+#include "thread_pool.h"
 
 using namespace std;
 
+int add2(int i) {
+    return i * 2;
+}
+
 int main()
 {
-    CCommand icmd;
-    cout << "cmd : " << icmd.GetCmd() << " arg : " << icmd.GetArg() << endl;
-    icmd.SetCmd(12);
-    icmd.SetArg("hello");
-    cout << "cmd : " << icmd.GetCmd() << " arg : " << icmd.GetArg() << endl;
+    CThreadPool pool;
 
-    //CThreadProcess.Process0();
+    vector<future<int>> futures(20);
+    int result = 0;
+    for (int i = 1; i <= 20; ++i) {
+        CTask tmp(i);
+        futures[i-1] = pool.submit(tmp);
+    }
+
+    for(unsigned i = 0; i < 20; ++i) {
+        result += futures[i].get();
+    }
+
+    cout << result << endl;
     return 0;
 }
